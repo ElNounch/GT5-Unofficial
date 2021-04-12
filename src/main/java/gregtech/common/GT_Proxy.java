@@ -1953,17 +1953,18 @@ public abstract class GT_Proxy implements IGT_Mod, IGuiHandler, IFuelHandler {
     @SuppressWarnings("deprecation")
     public void activateOreDictHandler() {
         this.mOreDictActivated = true;
-        ProgressManager.ProgressBar progressBar = ProgressManager.push("Register materials", mEvents.size());
         if (Loader.isModLoaded("betterloadingscreen")){
             GT_Values.cls_enabled = true;
             try {
-                GT_CLS_Compat.stepMaterialsCLS(mEvents, progressBar);
+                GT_CLS_Compat.stepMaterialsCLS(mEvents);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 GT_Mod.GT_FML_LOGGER.catching(e);
             }
         }
-        else
+        else {
+			ProgressManager.ProgressBar progressBar = ProgressManager.push("Register materials", mEvents.size());
             GT_Proxy.stepMaterialsVanilla(this.mEvents,progressBar);
+		}
     }
 
     public static final HashMap<Integer,HashMap<ChunkCoordIntPair,int []>> dimensionWiseChunkData = new HashMap<>(16);//stores chunk data that is loaded/saved

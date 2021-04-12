@@ -19,7 +19,8 @@ public class GT_CLS_Compat {
     private static Class alexiilProgressDisplayer;
 
     private static Method getLastPercent;
-    private static Method displayProgress;
+    private static Method displayProgressObject;
+    private static Method displayProgressString;
 
     private static Field isReplacingVanillaMaterials;
     private static Field isRegisteringGTmaterials;
@@ -46,22 +47,29 @@ public class GT_CLS_Compat {
 
         Optional.ofNullable(alexiilProgressDisplayer).ifPresent(e -> {
             try {
-                displayProgress = e.getMethod("displayProgress", String.class, float.class);
+                displayProgressObject = e.getMethod("displayProgress", Object.class, float.class);
+                displayProgressString = e.getMethod("displayProgress", String.class, float.class);
             } catch (NoSuchMethodException ex) {
                 GT_Mod.GT_FML_LOGGER.catching(ex);
             }
         });
     }
 
-    public static void stepMaterialsCLS(Collection<GT_Proxy.OreDictEventContainer> mEvents, ProgressManager.ProgressBar progressBar) throws IllegalAccessException, InvocationTargetException {
+    private static void _displayProgress(Object what, float pct) throws IllegalAccessException, InvocationTargetException {
+        if (displayProgressObject != null) {
+            displayProgressObject.invoke(null, what, pct);
+        } else if (displayProgressString != null) {
+            displayProgressString.invoke(null, what.toString(), pct);
+        }
+    }
+
+    public static void stepMaterialsCLS(Collection<GT_Proxy.OreDictEventContainer> mEvents) throws IllegalAccessException, InvocationTargetException {
         int sizeStep = GT_CLS_Compat.setStepSize(mEvents);
         int size = 0;
         for (GT_Proxy.OreDictEventContainer tEvent : mEvents) {
             sizeStep--;
 
-            String materialName = tEvent.mMaterial == null ? "" : tEvent.mMaterial.toString();
-
-            displayProgress.invoke(null, materialName, ((float) size) / 100);
+            _displayProgress(tEvent.mMaterial, ((float) size) / 100);
 
             if (sizeStep == 0) {
                 if (size % 5 == 0)
@@ -70,10 +78,8 @@ public class GT_CLS_Compat {
                 size++;
             }
 
-            progressBar.step(materialName);
             GT_Proxy.registerRecipes(tEvent);
         }
-        ProgressManager.pop(progressBar);
         isRegisteringGTmaterials.set(null, false);
     }
 
@@ -106,11 +112,11 @@ public class GT_CLS_Compat {
 
     private static void displayMethodAdapter(int counter, String mDefaultLocalName, int size) throws InvocationTargetException, IllegalAccessException {
         if (counter == 1) {
-            displayProgress.invoke(null, mDefaultLocalName, ((float) 95) / 100);
+            _displayProgress(mDefaultLocalName, ((float) 95) / 100);
         } else if (counter == 0) {
-            displayProgress.invoke(null, mDefaultLocalName, (float) 1);
+            _displayProgress(mDefaultLocalName, (float) 1);
         } else {
-            displayProgress.invoke(null, mDefaultLocalName, ((float) size) / 100);
+            _displayProgress(mDefaultLocalName, ((float) size) / 100);
         }
     }
 
@@ -139,7 +145,7 @@ public class GT_CLS_Compat {
 
     public static void pushToDisplayProgress() throws InvocationTargetException, IllegalAccessException {
         isReplacingVanillaMaterials.set(null, false);
-        displayProgress.invoke(null, "Post Initialization: loading GregTech", getLastPercent.invoke(null));
+        _displayProgress("Post Initialization: loading GregTech", (float) getLastPercent.invoke(null));
     }
 
 }
